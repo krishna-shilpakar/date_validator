@@ -23,7 +23,11 @@ module ActiveModel
         return if options[:allow_nil] && value.nil?
 
         unless value
-          record.errors.add(attr_name, I18n.t("errors.messages.not_a_date"), :value => value, :default => options[:message])
+           if !record.class.validators_on(attr_name).map(&:class).include? ActiveModel::Validations::PresenceValidator
+             error_msg = options[:message] || I18n.t("errors.messages.blank", :value => value, :attribute => attr_name.humanize)
+               record.errors.add(attr_name, error_msg, :default => options[:message])
+            end
+        
           return
         end
   
@@ -46,7 +50,7 @@ module ActiveModel
           end
          
           unless is_time?(option_value) && value.to_i.send(CHECKS[option], option_value.to_i)
-            error_msg = options[:message] || I18n.t("errors.messages.#{option}", :value => original_option_value)
+            error_msg = options[:message] || I18n.t("errors.messages.#{option}", :value => original_option_value, :attribute => attr_name.humanize)
             record.errors.add(attr_name, error_msg, :default => options[:message], :value => original_value, :date => original_option_value)
           end
         end
